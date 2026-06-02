@@ -3,22 +3,5 @@
 # Please see the documentation for all configuration options:
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
-version: 2
-updates:
-  # Frontend - Next.js
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
 
-  # Backend - NestJS
-  - package-ecosystem: "npm"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
 
-  # ML - Python
-  - package-ecosystem: "pip"
-    directory: "/ml"
-    schedule:
-      interval: "weekly"
