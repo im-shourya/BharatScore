@@ -43,7 +43,7 @@
 
 ## 1. Project Overview
 
-CredSaathi is a full-stack AI-driven alternate credit scoring platform that enables underserved individuals and MSMEs in India to access loans without a traditional credit history. The backend is a NestJS monorepo of microservices communicating over REST (synchronous) and Kafka (asynchronous), backed by PostgreSQL, MongoDB, Redis, and ClickHouse.
+BharatScore is a full-stack AI-driven alternate credit scoring platform that enables underserved individuals and MSMEs in India to access loans without a traditional credit history. The backend is a NestJS monorepo of microservices communicating over REST (synchronous) and Kafka (asynchronous), backed by PostgreSQL, MongoDB, Redis, and ClickHouse.
 
 ### Core principles
 
@@ -192,7 +192,7 @@ Client Request
 ## 4. Complete File Structure
 
 ```
-credsaathi-backend/
+BharatScore-backend/
 ├── package.json
 ├── pnpm-lock.yaml
 ├── tsconfig.json
@@ -366,23 +366,23 @@ credsaathi-backend/
 NODE_ENV=development
 PORT=3000
 API_VERSION=v1
-APP_NAME=CredSaathi
-ALLOWED_ORIGINS=http://localhost:3000,https://app.credsaathi.in
+APP_NAME=BharatScore
+ALLOWED_ORIGINS=http://localhost:3000,https://app.BharatScore.in
 CORS_CREDENTIALS=true
 
 # ── PostgreSQL ────────────────────────────────────────────
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_DB=credsaathi
-POSTGRES_USER=credsaathi_user
+POSTGRES_DB=BharatScore
+POSTGRES_USER=BharatScore_user
 POSTGRES_PASSWORD=strong_password_here
 POSTGRES_SSL=true
 POSTGRES_MAX_CONNECTIONS=50
 POSTGRES_IDLE_TIMEOUT_MS=30000
 
 # ── MongoDB ───────────────────────────────────────────────
-MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/credsaathi
-MONGODB_DB_NAME=credsaathi_behavioral
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/BharatScore
+MONGODB_DB_NAME=BharatScore_behavioral
 MONGODB_MAX_POOL_SIZE=10
 
 # ── Redis ─────────────────────────────────────────────────
@@ -395,8 +395,8 @@ REDIS_DEFAULT_TTL=3600
 
 # ── Kafka ─────────────────────────────────────────────────
 KAFKA_BROKERS=broker1:9092,broker2:9092
-KAFKA_CLIENT_ID=credsaathi-api
-KAFKA_GROUP_ID=credsaathi-consumers
+KAFKA_CLIENT_ID=BharatScore-api
+KAFKA_GROUP_ID=BharatScore-consumers
 KAFKA_SSL=true
 KAFKA_SASL_MECHANISM=SCRAM-SHA-256
 KAFKA_SASL_USERNAME=kafka_user
@@ -407,9 +407,9 @@ JWT_ACCESS_SECRET=your_rsa_private_key_here
 JWT_ACCESS_PUBLIC=your_rsa_public_key_here
 JWT_ACCESS_EXPIRY=900s
 JWT_REFRESH_EXPIRY=7d
-KEYCLOAK_URL=https://auth.credsaathi.in
-KEYCLOAK_REALM=credsaathi
-KEYCLOAK_CLIENT_ID=credsaathi-api
+KEYCLOAK_URL=https://auth.BharatScore.in
+KEYCLOAK_REALM=BharatScore
+KEYCLOAK_CLIENT_ID=BharatScore-api
 KEYCLOAK_CLIENT_SECRET=client_secret
 
 # ── OTP (UIDAI) ───────────────────────────────────────────
@@ -422,21 +422,21 @@ OTP_LOCKOUT_SECONDS=1800
 # ── DigiLocker ────────────────────────────────────────────
 DIGILOCKER_CLIENT_ID=digilocker_client_id
 DIGILOCKER_CLIENT_SECRET=digilocker_secret
-DIGILOCKER_REDIRECT_URI=https://api.credsaathi.in/v1/kyc/callback
+DIGILOCKER_REDIRECT_URI=https://api.BharatScore.in/v1/kyc/callback
 
 # ── Account Aggregator ────────────────────────────────────
 AA_CLIENT_ID=setu_client_id
 AA_CLIENT_SECRET=setu_secret
 AA_BASE_URL=https://api.setu.co/aa
-AA_REDIRECT_URI=https://api.credsaathi.in/v1/consent/callback
+AA_REDIRECT_URI=https://api.BharatScore.in/v1/consent/callback
 
 # ── AWS S3 ────────────────────────────────────────────────
 AWS_REGION=ap-south-1
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=secret...
-S3_BUCKET_KYC=credsaathi-kyc
-S3_BUCKET_STATEMENTS=credsaathi-statements
-S3_BUCKET_ML=credsaathi-ml-artifacts
+S3_BUCKET_KYC=BharatScore-kyc
+S3_BUCKET_STATEMENTS=BharatScore-statements
+S3_BUCKET_ML=BharatScore-ml-artifacts
 S3_PRESIGNED_URL_EXPIRY=900
 AWS_KMS_KEY_ARN=arn:aws:kms:ap-south-1:...
 
@@ -470,11 +470,11 @@ CLICKHOUSE_HOST=localhost
 CLICKHOUSE_PORT=8123
 CLICKHOUSE_USER=default
 CLICKHOUSE_PASSWORD=clickhouse_pass
-CLICKHOUSE_DATABASE=credsaathi_analytics
+CLICKHOUSE_DATABASE=BharatScore_analytics
 
 # ── MLflow ────────────────────────────────────────────────
 MLFLOW_TRACKING_URI=http://mlflow:5000
-MLFLOW_EXPERIMENT_NAME=credsaathi-scoring
+MLFLOW_EXPERIMENT_NAME=BharatScore-scoring
 
 # ── Monitoring ────────────────────────────────────────────
 PROMETHEUS_PORT=9090
@@ -1193,7 +1193,7 @@ async function bootstrap() {
   );
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('CredSaathi API')
+    .setTitle('BharatScore API')
     .setDescription(`
       AI-Powered Alternate Credit Scoring Platform
       
@@ -1213,8 +1213,8 @@ async function bootstrap() {
     .addTag('emi', 'EMI schedule and repayments')
     .addTag('cms', 'Content management')
     .addTag('admin', 'Admin and compliance')
-    .addServer('https://api.credsaathi.in', 'Production')
-    .addServer('https://staging-api.credsaathi.in', 'Staging')
+    .addServer('https://api.BharatScore.in', 'Production')
+    .addServer('https://staging-api.BharatScore.in', 'Staging')
     .addServer('http://localhost:3000', 'Development')
     .build();
 
@@ -1225,7 +1225,7 @@ async function bootstrap() {
 
   const port = config.get<number>('PORT') ?? 3000;
   await app.listen(port);
-  console.log(`CredSaathi API running on: http://localhost:${port}/api/v1`);
+  console.log(`BharatScore API running on: http://localhost:${port}/api/v1`);
   console.log(`Swagger docs: http://localhost:${port}/api/docs`);
 }
 bootstrap();
@@ -1632,8 +1632,8 @@ import { RefreshStrategy } from './strategies/refresh.strategy';
         signOptions: {
           algorithm: 'RS256',
           expiresIn: config.get('JWT_ACCESS_EXPIRY'),
-          issuer: 'credsaathi-auth',
-          audience: 'credsaathi-api',
+          issuer: 'BharatScore-auth',
+          audience: 'BharatScore-api',
         },
       }),
       inject: [ConfigService],
@@ -1798,8 +1798,8 @@ export class AuthService {
       jti,
       role: user.role,
       locale: user.locale,
-      iss: 'credsaathi-auth',
-      aud: 'credsaathi-api',
+      iss: 'BharatScore-auth',
+      aud: 'BharatScore-api',
     };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = crypto.randomBytes(64).toString('hex');
@@ -1943,8 +1943,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       ignoreExpiration: false,
       secretOrKey: config.get('JWT_ACCESS_PUBLIC'),
       algorithms: ['RS256'],
-      issuer: 'credsaathi-auth',
-      audience: 'credsaathi-api',
+      issuer: 'BharatScore-auth',
+      audience: 'BharatScore-api',
     });
   }
 
@@ -2791,7 +2791,7 @@ export class AdminService {
   async triggerRetrain(force: boolean) {
     const response = await firstValueFrom(
       this.httpService.post(
-        `${this.config.get('AIRFLOW_URL')}/api/v1/dags/credsaathi_monthly_retrain/dagRuns`,
+        `${this.config.get('AIRFLOW_URL')}/api/v1/dags/BharatScore_monthly_retrain/dagRuns`,
         { conf: { force_retrain: force } },
         { auth: { username: this.config.get('AIRFLOW_USER'), password: this.config.get('AIRFLOW_PASS') } },
       ),
@@ -2934,7 +2934,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
       messages: [{
         key: payload.userId ?? payload.user_id ?? uuidv4(),
         value: JSON.stringify({ ...payload, emitted_at: new Date().toISOString() }),
-        headers: { 'content-type': 'application/json', 'source': 'credsaathi-api' },
+        headers: { 'content-type': 'application/json', 'source': 'BharatScore-api' },
       }],
     });
   }
@@ -2987,7 +2987,7 @@ export class I18nAppModule {}
   "otp": {
     "sent": "OTP sent to {mobile}. Valid for 5 minutes.",
     "verified": "OTP verified successfully.",
-    "welcome_new": "Welcome to CredSaathi! Let us get you started.",
+    "welcome_new": "Welcome to BharatScore! Let us get you started.",
     "welcome_back": "Welcome back! You are now logged in.",
     "invalid": "Incorrect OTP. {attempts_remaining} attempts remaining.",
     "expired": "OTP has expired. Please request a new one.",
@@ -3010,7 +3010,7 @@ export class I18nAppModule {}
   "otp": {
     "sent": "OTP आपके मोबाइल {mobile} पर भेजा गया है। 5 मिनट में वैध।",
     "verified": "OTP सफलतापूर्वक सत्यापित हुआ।",
-    "welcome_new": "CredSaathi में आपका स्वागत है! आइए शुरू करते हैं।",
+    "welcome_new": "BharatScore में आपका स्वागत है! आइए शुरू करते हैं।",
     "welcome_back": "वापस स्वागत है! आप लॉग इन हो गए हैं।",
     "invalid": "गलत OTP। {attempts_remaining} प्रयास शेष हैं।",
     "expired": "OTP समाप्त हो गया। कृपया नया OTP मांगें।",
@@ -3030,7 +3030,7 @@ export class I18nAppModule {}
   "otp": {
     "sent": "OTP உங்கள் மொபைல் {mobile} க்கு அனுப்பப்பட்டது। 5 நிமிடங்கள் செல்லுபடியாகும்।",
     "verified": "OTP வெற்றிகரமாக சரிபார்க்கப்பட்டது.",
-    "welcome_new": "CredSaathi-க்கு வரவேற்கிறோம்! தொடங்குவோம்.",
+    "welcome_new": "BharatScore-க்கு வரவேற்கிறோம்! தொடங்குவோம்.",
     "welcome_back": "திரும்ப வரவேற்கிறோம்! நீங்கள் உள்நுழைந்துள்ளீர்கள்.",
     "invalid": "தவறான OTP. {attempts_remaining} முயற்சிகள் மீதம்.",
     "expired": "OTP காலாவதியானது. புதியதை கோருங்கள்.",
@@ -3322,7 +3322,7 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 
 const sdk = new NodeSDK({
   resource: new Resource({
-    [SemanticResourceAttributes.SERVICE_NAME]: 'credsaathi-api',
+    [SemanticResourceAttributes.SERVICE_NAME]: 'BharatScore-api',
     [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
     environment: process.env.NODE_ENV,
   }),
@@ -3478,7 +3478,7 @@ on:
 env:
   NODE_VERSION: '20.x'
   REGISTRY: ghcr.io
-  IMAGE_NAME: credsaathi/api
+  IMAGE_NAME: BharatScore/api
 
 jobs:
   lint-and-test:
@@ -3487,7 +3487,7 @@ jobs:
     services:
       postgres:
         image: postgres:16
-        env: { POSTGRES_DB: credsaathi_test, POSTGRES_USER: test, POSTGRES_PASSWORD: test }
+        env: { POSTGRES_DB: BharatScore_test, POSTGRES_USER: test, POSTGRES_PASSWORD: test }
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
         image: redis:7
@@ -3519,7 +3519,7 @@ jobs:
           NODE_ENV: test
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          POSTGRES_DB: credsaathi_test
+          POSTGRES_DB: BharatScore_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           REDIS_HOST: localhost
@@ -3575,9 +3575,9 @@ jobs:
     steps:
       - name: Deploy via ArgoCD
         run: |
-          argocd app set credsaathi-staging \
+          argocd app set BharatScore-staging \
             --helm-set image.tag=${{ github.sha }}
-          argocd app sync credsaathi-staging --wait
+          argocd app sync BharatScore-staging --wait
 ```
 
 ---
@@ -3616,29 +3616,29 @@ CMD ["node", "-r", "./dist/telemetry.js", "dist/main.js"]
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: credsaathi-api
+  name: BharatScore-api
   namespace: production
 spec:
   replicas: 3
   selector:
-    matchLabels: { app: credsaathi-api }
+    matchLabels: { app: BharatScore-api }
   template:
     metadata:
-      labels: { app: credsaathi-api }
+      labels: { app: BharatScore-api }
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9090"
     spec:
-      serviceAccountName: credsaathi-api
+      serviceAccountName: BharatScore-api
       containers:
         - name: api
-          image: ghcr.io/credsaathi/api:latest
+          image: ghcr.io/BharatScore/api:latest
           ports:
             - containerPort: 3000
             - containerPort: 9090
           envFrom:
-            - secretRef: { name: credsaathi-secrets }
-            - configMapRef: { name: credsaathi-config }
+            - secretRef: { name: BharatScore-secrets }
+            - configMapRef: { name: BharatScore-config }
           resources:
             requests: { cpu: "250m", memory: "512Mi" }
             limits: { cpu: "1000m", memory: "1Gi" }
@@ -3660,7 +3660,7 @@ spec:
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: DoNotSchedule
           labelSelector:
-            matchLabels: { app: credsaathi-api }
+            matchLabels: { app: BharatScore-api }
 ```
 
 ### `kubernetes/hpa.yaml`
@@ -3669,12 +3669,12 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: credsaathi-api-hpa
+  name: BharatScore-api-hpa
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: credsaathi-api
+    name: BharatScore-api
   minReplicas: 3
   maxReplicas: 20
   metrics:
@@ -3780,6 +3780,6 @@ export class HealthController {
 
 ---
 
-*CredSaathi Backend Technical Documentation — v1.0*
-*Generated: 2024 · NestJS 10 · Node.js 20 · TypeScript 5*
+*BharatScore Backend Technical Documentation — v1.0*
+*Generated: 2026 · NestJS 10 · Node.js 20 · TypeScript 5*
 *All code samples are production-ready and follow NestJS best practices.*
