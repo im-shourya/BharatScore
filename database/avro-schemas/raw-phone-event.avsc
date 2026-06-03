@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "RawPhoneEvent",
+  "namespace": "in.credsaathi.events",
+  "fields": [
+    { "name": "event_id",      "type": "string" },
+    { "name": "user_id",       "type": "string" },
+    { "name": "source",        "type": "string" },
+    { "name": "month_year",    "type": "string" },
+    { "name": "payload",       "type": "string" },
+    { "name": "consent_id",    "type": "string" },
+    { "name": "schema_version","type": "string", "default": "1.0" },
+    { "name": "emitted_at",    "type": "string" }
+  ]
+}

@@ -33,7 +33,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     if (jti) {
       const isBlacklisted = await this.cacheService.get(
-        CACHE_KEYS.TOKEN_BLACKLIST(jti),
+        CACHE_KEYS.BLACKLIST(jti),
       );
       if (isBlacklisted) throw new UnauthorizedException('TOKEN_BLACKLISTED');
     }

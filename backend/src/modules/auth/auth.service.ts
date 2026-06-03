@@ -13,7 +13,8 @@ import { AuthRepository } from './auth.repository';
 import { CacheService } from '../../shared/cache/cache.service';
 import { CACHE_KEYS } from '../../common/constants/cache-keys';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
-import { UserEntity, UserStatus } from '../user/entities/user.entity';
+import { UserEntity } from '../user/entities/user.entity';
+import { UserStatus } from '../../common/enums/user-status.enum';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 
@@ -193,7 +194,7 @@ export class AuthService {
   async logout(jti: string, userId: string) {
     // Blacklist the current access token for its remaining TTL
     const ttl = 900; // 15 minutes (max token lifetime)
-    await this.cacheService.set(CACHE_KEYS.TOKEN_BLACKLIST(jti), 1, ttl);
+    await this.cacheService.set(CACHE_KEYS.BLACKLIST(jti), 1, ttl);
 
     // Revoke the session in DB
     await this.authRepository.revokeSessionByJti(jti);

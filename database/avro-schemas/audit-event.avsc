@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "AuditEvent",
+  "namespace": "in.credsaathi.events",
+  "fields": [
+    { "name": "event_id",      "type": "string" },
+    { "name": "actor_id",      "type": ["null","string"], "default": null },
+    { "name": "entity_type",   "type": "string" },
+    { "name": "entity_id",     "type": ["null","string"], "default": null },
+    { "name": "action",        "type": "string" },
+    { "name": "payload_hash",  "type": "string" },
+    { "name": "prev_hash",     "type": ["null","string"], "default": null },
+    { "name": "metadata",      "type": "string" },
+    { "name": "logged_at",     "type": "string" }
+  ]
+}
