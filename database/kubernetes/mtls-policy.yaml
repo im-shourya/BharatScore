@@ -1,0 +1,25 @@
+# ============================================================================
+# BharatScore / CredSaathi — mTLS & Istio Configuration
+# Section 19 of the database specification
+# ============================================================================
+
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: credsaathi-mtls
+  namespace: production
+spec:
+  mtls:
+    mode: STRICT
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: credsaathi-tls
+  namespace: production
+spec:
+  host: "*.production.svc.cluster.local"
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
