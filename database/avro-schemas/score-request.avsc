@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "ScoreRequest",
+  "namespace": "in.credsaathi.events",
+  "fields": [
+    { "name": "request_id",    "type": "string" },
+    { "name": "user_id",       "type": "string" },
+    { "name": "trigger",       "type": { "type": "enum", "name": "Trigger",
+        "symbols": ["user_request","loan_application","scheduled","admin"] } },
+    { "name": "loan_amount",   "type": ["null", "long"], "default": null },
+    { "name": "model_version", "type": "string" },
+    { "name": "emitted_at",    "type": "string" }
+  ]
+}
