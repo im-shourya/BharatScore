@@ -1,0 +1,14 @@
+// Barrel export for all enums
+export { Role } from './role.enum';
+export { UserStatus } from './user-status.enum';
+export { KycStatus } from './kyc-status.enum';
+export { DataSource } from './data-source.enum';
+export { ConsentScope } from './consent-scope.enum';
+export { DocType } from './doc-type.enum';
+export { RiskBand } from './risk-band.enum';
+export { LoanState } from './loan-state.enum';
+export { LoanPurpose } from './loan-purpose.enum';
+export { EmiStatus } from './emi-status.enum';
+export { PaymentMode } from './payment-mode.enum';
+export { NotificationChannel } from './notification-channel.enum';
+export { NotificationStatus } from './notification-status.enum';
