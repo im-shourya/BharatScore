@@ -14,12 +14,14 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     const host = this.config.get<string>('redis.host') || 'localhost';
     const port = this.config.get<number>('redis.port') || 6379;
     const password = this.config.get<string>('redis.password') || undefined;
+    const tls = this.config.get<boolean>('redis.tls') ? {} : undefined;
     this.keyPrefix = this.config.get<string>('redis.keyPrefix') || 'cs:';
 
     this.client = new Redis({
       host,
       port,
       password: password || undefined,
+      tls,
       retryStrategy: (times: number) => {
         if (times > 3) {
           this.logger.warn('Redis connection failed after 3 retries. Running without cache.');

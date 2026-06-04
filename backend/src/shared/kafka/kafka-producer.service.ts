@@ -60,6 +60,11 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
         clientId: this.config.get<string>('kafka.clientId', 'credsaathi-api'),
         brokers: this.config.get<string[]>('kafka.brokers', ['localhost:9092']),
         ssl: this.config.get<boolean>('kafka.ssl', false),
+        sasl: this.config.get('kafka.sasl.username') ? {
+          mechanism: this.config.get<string>('kafka.sasl.mechanism', 'plain').toLowerCase(),
+          username: this.config.get<string>('kafka.sasl.username')!,
+          password: this.config.get<string>('kafka.sasl.password')!,
+        } as any : undefined,
         connectionTimeout: this.config.get<number>('kafka.connectionTimeout', 3000),
         requestTimeout: this.config.get<number>('kafka.requestTimeout', 25000),
         retry: {
