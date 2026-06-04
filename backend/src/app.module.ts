@@ -6,10 +6,15 @@ import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
 import redisConfig from './config/redis.config';
-
+import mongodbConfig from './config/mongodb.config';
+import kafkaConfig from './config/kafka.config';
+import storageConfig from './config/storage.config';
 import { DatabaseModule } from './shared/database/database.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { EncryptionModule } from './shared/encryption/encryption.module';
+import { MongodbModule } from './shared/mongodb/mongodb.module';
+import { KafkaModule } from './shared/kafka/kafka.module';
+import { StorageModule } from './shared/storage/storage.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 
@@ -25,7 +30,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, redisConfig],
+      load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
@@ -40,6 +45,9 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     DatabaseModule,
     CacheModule,
     EncryptionModule,
+    MongodbModule,
+    KafkaModule,
+    StorageModule,
 
     // Feature modules
     AuthModule,
