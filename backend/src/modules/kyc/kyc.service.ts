@@ -69,6 +69,10 @@ export class KycService {
     };
   }
 
+  async testSetuConnection() {
+    return this.digilockerService.testConnection();
+  }
+
   // ── Step 2: Handle DigiLocker Callback ───────────────────
   async handleCallback(params: {
     success: string;
