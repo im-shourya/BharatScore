@@ -12,6 +12,7 @@ import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthRepository } from './auth.repository';
 import { CacheService } from '../../shared/cache/cache.service';
+import { SmsService } from '../../shared/sms/sms.service';
 import { CACHE_KEYS } from '../../common/constants/cache-keys';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
 import { UserEntity } from '../user/entities/user.entity';
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly cacheService: CacheService,
     private readonly config: ConfigService,
     private readonly i18n: I18nService,
+    private readonly smsService: SmsService,
   ) {}
 
   // ── Send OTP ────────────────────────────────────────────────
@@ -59,13 +61,14 @@ export class AuthService {
       args: { mobile: dto.mobile.replace(/.(?=.{4})/g, '*') } 
     });
 
-    // In development, log the OTP. In production, this would call UIDAI API.
-    if (this.config.get('NODE_ENV') !== 'production') {
-      this.logger.warn(`🔑 [DEV OTP] Mobile: ${dto.mobile} → OTP: ${otp}`);
-    } else {
-      // TODO: Integrate with UIDAI OTP gateway
-      // await this.uidaiService.sendOtp(dto.mobile, otp);
-      this.logger.log(`OTP sent to ${dto.mobile.replace(/.(?=.{4})/g, '*')}`);
+    // Send OTP via Fast2SMS (respects SMS_ENABLED kill switch internally)
+    const smsResult = await this.smsService.sendOtp(dto.mobile, otp);
+    if (!smsResult.success) {
+      this.logger.error(`SMS delivery failed for ${dto.mobile.replace(/.(?=.{4})/g, '*')}: ${smsResult.error}`);
+      throw new HttpException(
+        { code: 'SMS_DELIVERY_FAILED', message: 'Failed to send OTP. Please try again.' },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
     }
 
     return {
@@ -264,7 +267,8 @@ export class AuthService {
     if (this.config.get('NODE_ENV') !== 'production') {
       return '123456';
     }
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    // Cryptographically secure 6-digit OTP (100000–999999)
+    return crypto.randomInt(100000, 1000000).toString();
   }
 
   private hashOtp(otp: string, mobile: string): string {
