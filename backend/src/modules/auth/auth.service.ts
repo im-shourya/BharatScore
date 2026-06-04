@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { I18nService } from 'nestjs-i18n';
 import * as crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthRepository } from './auth.repository';
@@ -27,11 +28,12 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly cacheService: CacheService,
     private readonly config: ConfigService,
+    private readonly i18n: I18nService,
   ) {}
 
   // ── Send OTP ────────────────────────────────────────────────
 
-  async sendOtp(dto: SendOtpDto): Promise<{ message: string; expires_in: number }> {
+  async sendOtp(dto: SendOtpDto, lang: string): Promise<{ message: string; expires_in: number }> {
     // Check if the mobile is locked (too many failed attempts)
     const lockKey = CACHE_KEYS.OTP_LOCK(dto.mobile);
     const isLocked = await this.cacheService.get(lockKey);
@@ -52,6 +54,11 @@ export class AuthService {
     await this.cacheService.set(CACHE_KEYS.OTP(dto.mobile), otpHash, ttl);
     await this.cacheService.set(CACHE_KEYS.OTP_ATTEMPTS(dto.mobile), 0, ttl);
 
+    const messageStr = await this.i18n.translate('auth.otp.sent', { 
+      lang, 
+      args: { mobile: dto.mobile.replace(/.(?=.{4})/g, '*') } 
+    });
+
     // In development, log the OTP. In production, this would call UIDAI API.
     if (this.config.get('NODE_ENV') !== 'production') {
       this.logger.warn(`🔑 [DEV OTP] Mobile: ${dto.mobile} → OTP: ${otp}`);
@@ -62,18 +69,21 @@ export class AuthService {
     }
 
     return {
-      message: `OTP sent to ${dto.mobile.replace(/.(?=.{4})/g, '*')}`,
+      message: messageStr,
       expires_in: ttl,
     };
   }
 
   // ── Verify OTP ──────────────────────────────────────────────
 
-  async verifyOtp(dto: VerifyOtpDto, ip: string, userAgent: string) {
+  async verifyOtp(dto: VerifyOtpDto, lang: string, ip: string, userAgent: string) {
     // Check if OTP exists (not expired)
     const storedHash = await this.cacheService.get<string>(CACHE_KEYS.OTP(dto.mobile));
     if (!storedHash) {
-      throw new UnauthorizedException({ code: 'OTP_EXPIRED', message: 'OTP has expired' });
+      throw new UnauthorizedException({ 
+        code: 'OTP_EXPIRED', 
+        message: await this.i18n.translate('auth.otp.expired', { lang }) 
+      });
     }
 
     // Check attempt count
@@ -91,7 +101,7 @@ export class AuthService {
       throw new HttpException(
         {
           code: 'ACCOUNT_LOCKED',
-          message: 'Account locked due to too many failed attempts',
+          message: await this.i18n.translate('auth.otp.blocked', { lang }),
           locked_until: new Date(Date.now() + 1800000),
         },
         HttpStatus.LOCKED,
@@ -103,7 +113,10 @@ export class AuthService {
     if (storedHash !== expectedHash) {
       throw new UnauthorizedException({
         code: 'OTP_INVALID',
-        message: 'Invalid OTP',
+        message: await this.i18n.translate('auth.otp.invalid', { 
+          lang, 
+          args: { attempts_remaining: maxAttempts - attempts } 
+        }),
         attempts_remaining: maxAttempts - attempts,
       });
     }
@@ -120,7 +133,7 @@ export class AuthService {
       user = await this.authRepository.createUser({
         mobile_number: dto.mobile,
         status: UserStatus.ACTIVE,
-        locale: 'en',
+        locale: lang || 'en',
       });
       this.logger.log(`New user created: ${user.id}`);
     }
@@ -144,6 +157,11 @@ export class AuthService {
       expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     });
 
+    const welcomeMsg = await this.i18n.translate(
+      isNewUser ? 'auth.otp.welcome_new' : 'auth.otp.welcome_back',
+      { lang }
+    );
+
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
@@ -151,7 +169,7 @@ export class AuthService {
       expires_in: 900,
       user: this.mapUserResponse(user),
       is_new_user: isNewUser,
-      message: isNewUser ? 'Welcome to CredSaathi!' : 'Welcome back!',
+      message: welcomeMsg,
     };
   }
 
