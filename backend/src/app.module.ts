@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { BullModule } from '@nestjs/bull';
 
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -19,7 +20,14 @@ import { StorageModule } from './shared/storage/storage.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { KycModule } from './modules/kyc/kyc.module';
 import { I18nAppModule } from './shared/i18n/i18n.module';
-
+import { AuditModule } from './modules/audit/audit.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { UserModule } from './modules/user/user.module';
+import { CmsModule } from './modules/cms/cms.module';
+import { DocumentModule } from './modules/document/document.module';
+import { ConsentModule } from './modules/consent/consent.module';
+import { ScoringModule } from './modules/scoring/scoring.module';
+import { LoanModule } from './modules/loan/loan.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CustomThrottlerGuard } from './guards/throttler.guard';
@@ -34,6 +42,19 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
       isGlobal: true,
       load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig],
       envFilePath: ['.env.local', '.env'],
+    }),
+
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        redis: {
+          host: config.get('BULL_REDIS_HOST'),
+          port: config.get('BULL_REDIS_PORT'),
+          password: config.get('BULL_REDIS_PASSWORD'),
+          tls: config.get('BULL_REDIS_TLS') === 'true' ? {} : undefined,
+        },
+      }),
+      inject: [ConfigService],
     }),
 
     // Rate limiting
@@ -55,6 +76,14 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     AuthModule,
     KycModule,
     I18nAppModule,
+    AuditModule,
+    NotificationModule,
+    UserModule,
+    CmsModule,
+    DocumentModule,
+    ConsentModule,
+    ScoringModule,
+    LoanModule,
   ],
   providers: [
     // Global guards (applied to all routes)
