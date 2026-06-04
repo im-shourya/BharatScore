@@ -85,7 +85,10 @@ export class DigiLockerService {
 
   // ── Step 1: Create DigiLocker Session ────────────────────
   async createSession(redirectUrl: string): Promise<SetuSessionResponse> {
-    const url = `${this.baseUrl}/api/digilocker/`;
+    // Remove any trailing slashes from baseUrl just in case
+    const normalizedBase = this.baseUrl.replace(/\/$/, '');
+    const url = `${normalizedBase}/api/digilocker`; // No trailing slash!
+    
     this.logger.log(`Creating DigiLocker session → ${url}`);
     this.logger.log(`Redirect URL: ${redirectUrl}`);
     this.logger.log(`Headers: x-client-id=${this.headers['x-client-id']?.substring(0, 8)}..., x-product-instance-id=${this.headers['x-product-instance-id']?.substring(0, 8)}...`);
@@ -95,7 +98,13 @@ export class DigiLockerService {
         this.httpService.post(
           url,
           { redirectUrl },
-          { headers: this.headers },
+          { 
+            headers: {
+              ...this.headers,
+              // Some WAFs block requests without a standard User-Agent
+              'User-Agent': 'Mozilla/5.0 (Node.js) API-Client/1.0',
+            } 
+          },
         ),
       );
       this.logger.log(`DigiLocker session created: ${response.data.id}`);
@@ -126,11 +135,17 @@ export class DigiLockerService {
     error?: string;
   }> {
     try {
+      const normalizedBase = this.baseUrl.replace(/\/$/, '');
       const response = await firstValueFrom(
         this.httpService.post(
-          `${this.baseUrl}/api/digilocker/`,
+          `${normalizedBase}/api/digilocker`,
           { redirectUrl: 'https://example.com/test' },
-          { headers: this.headers },
+          { 
+            headers: {
+              ...this.headers,
+              'User-Agent': 'Mozilla/5.0 (Node.js) API-Client/1.0',
+            } 
+          },
         ),
       );
       return {
