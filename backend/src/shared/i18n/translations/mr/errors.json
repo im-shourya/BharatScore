@@ -1,0 +1,12 @@
+{
+  "VALIDATION_ERROR": "One or more fields are invalid.",
+  "NOT_FOUND": "The requested resource was not found.",
+  "INTERNAL_ERROR": "Something went wrong. Please try again later.",
+  "KYC_NOT_VERIFIED": "KYC verification is required before applying for a loan.",
+  "SCORE_NOT_GENERATED": "Please generate your credit score before applying.",
+  "ACTIVE_LOAN_EXISTS": "You already have an active loan application.",
+  "CONSENT_ALREADY_ACTIVE": "Consent for this data source is already active.",
+  "DOCUMENT_NOT_FOUND": "The requested document was not found.",
+  "SCORING_SERVICE_UNAVAILABLE": "Score generation is temporarily unavailable. Please try again.",
+  "AADHAAR_MISMATCH": "Aadhaar number does not match your previously verified identity."
+}
