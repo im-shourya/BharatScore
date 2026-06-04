@@ -2,12 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 interface UploadParams {
-  bucket: string;
-  key: string;
+  bucket: string; // Used as container name in Azure
+  key: string;    // Used as blob name in Azure
   body: Buffer | string;
   contentType: string;
   metadata?: Record<string, string>;
-  withObjectLock?: boolean;
+  withObjectLock?: boolean; // Note: For real Azure immutability, this requires container-level immutability policies
 }
 
 interface PresignParams {
@@ -17,121 +17,149 @@ interface PresignParams {
 }
 
 /**
- * S3/MinIO Storage Service — Full implementation per Section 17.
+ * Azure Blob Storage Service implementation.
+ *
+ * Replaces the AWS S3 implementation to work with Azure Blob Storage.
  *
  * Features:
- *   - KMS server-side encryption
- *   - SHA256 checksums
- *   - Object Lock (COMPLIANCE mode, 7-year retention)
- *   - Presigned URLs for secure document access
+ *   - Uploads to Blob Storage
+ *   - SAS (Shared Access Signature) generation for Presigned URLs
  *   - Soft delete (marker) + hard delete
  *
- * NOTE: Requires @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner.
- * Falls back gracefully if not installed.
+ * NOTE: Requires @azure/storage-blob.
  */
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private s3: any = null;
+  private blobServiceClient: any = null;
   private initialized = false;
 
   constructor(private config: ConfigService) {
-    this.initS3Client();
+    this.initAzureClient();
   }
 
-  private async initS3Client(): Promise<void> {
+  private async initAzureClient(): Promise<void> {
     try {
-      const { S3Client } = await import('@aws-sdk/client-s3');
-      this.s3 = new S3Client({
-        region: this.config.get('storage.region', 'ap-south-1'),
-        credentials: {
-          accessKeyId: this.config.get('storage.accessKeyId', ''),
-          secretAccessKey: this.config.get('storage.secretAccessKey', ''),
-        },
-      });
-      this.initialized = true;
-      this.logger.log('S3 client initialized');
+      const { BlobServiceClient } = await import('@azure/storage-blob');
+      const connectionString = this.config.get<string>('storage.azure.connectionString');
+      
+      if (connectionString) {
+        this.blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+        this.initialized = true;
+        this.logger.log('Azure Blob Storage client initialized');
+      } else {
+        this.logger.warn('Azure Blob Storage connection string missing.');
+      }
     } catch (err) {
-      this.logger.warn(`S3 client not available: ${(err as Error).message}`);
+      this.logger.warn(`Azure Blob Storage client not available: ${(err as Error).message}`);
     }
   }
 
   async upload(params: UploadParams): Promise<{ key: string; etag: string }> {
     if (!this.initialized) {
-      this.logger.warn(`[S3-MOCK] Upload to ${params.bucket}/${params.key}`);
+      this.logger.warn(`[AZURE-MOCK] Upload to ${params.bucket}/${params.key}`);
       return { key: params.key, etag: 'mock-etag' };
     }
 
-    const { PutObjectCommand } = await import('@aws-sdk/client-s3');
-    const command = new PutObjectCommand({
-      Bucket: params.bucket,
-      Key: params.key,
-      Body: params.body,
-      ContentType: params.contentType,
-      Metadata: params.metadata,
-      ServerSideEncryption: 'aws:kms',
-      SSEKMSKeyId: this.config.get('storage.kmsKeyArn'),
-      ChecksumAlgorithm: 'SHA256',
-      ObjectLockMode: params.withObjectLock ? 'COMPLIANCE' : undefined,
-      ObjectLockRetainUntilDate: params.withObjectLock
-        ? new Date(Date.now() + 7 * 365 * 24 * 60 * 60 * 1000)
-        : undefined,
-    });
+    try {
+      const containerClient = this.blobServiceClient.getContainerClient(params.bucket);
+      const blockBlobClient = containerClient.getBlockBlobClient(params.key);
 
-    const result = await this.s3.send(command);
-    return { key: params.key, etag: result.ETag || '' };
+      const data = Buffer.isBuffer(params.body) ? params.body : Buffer.from(params.body);
+
+      const result = await blockBlobClient.uploadData(data, {
+        blobHTTPHeaders: { blobContentType: params.contentType },
+        metadata: params.metadata,
+      });
+
+      return { key: params.key, etag: result.etag || '' };
+    } catch (err) {
+      this.logger.error(`Azure Upload Error for ${params.key}: ${(err as Error).message}`);
+      throw err;
+    }
   }
 
   async getPresignedUrl(params: PresignParams): Promise<string> {
     if (!this.initialized) {
-      return `https://mock-s3.example.com/${params.bucket}/${params.key}`;
+      return `https://mock-azure.example.com/${params.bucket}/${params.key}`;
     }
 
-    const { GetObjectCommand } = await import('@aws-sdk/client-s3');
-    const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-    const command = new GetObjectCommand({
-      Bucket: params.bucket,
-      Key: params.key,
-      ResponseContentDisposition: 'inline',
-    });
-    return getSignedUrl(this.s3, command, {
-      expiresIn: params.expiresIn ?? this.config.get<number>('storage.presignedUrlExpiry', 900),
-    });
+    try {
+      const { generateBlobSASQueryParameters, StorageSharedKeyCredential, BlobSASPermissions } = await import('@azure/storage-blob');
+      
+      const accountName = this.config.get<string>('storage.azure.accountName');
+      const accountKey = this.config.get<string>('storage.azure.accountKey');
+      
+      if (!accountName || !accountKey) {
+        throw new Error('Azure account name or key missing for SAS generation.');
+      }
+
+      const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+      const containerClient = this.blobServiceClient.getContainerClient(params.bucket);
+      const blockBlobClient = containerClient.getBlockBlobClient(params.key);
+
+      const expiresInSeconds = params.expiresIn ?? this.config.get<number>('storage.presignedUrlExpiry', 900);
+      const expiresOn = new Date(new Date().valueOf() + expiresInSeconds * 1000);
+
+      const sasOptions = {
+        containerName: params.bucket,
+        blobName: params.key,
+        permissions: BlobSASPermissions.parse('r'), // Read permission
+        startsOn: new Date(),
+        expiresOn,
+      };
+
+      const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+      return `${blockBlobClient.url}?${sasToken}`;
+    } catch (err) {
+      this.logger.error(`Azure SAS Error for ${params.key}: ${(err as Error).message}`);
+      throw err;
+    }
   }
 
   async softDelete(bucket: string, key: string): Promise<void> {
     if (!this.initialized) {
-      this.logger.warn(`[S3-MOCK] Soft delete ${bucket}/${key}`);
+      this.logger.warn(`[AZURE-MOCK] Soft delete ${bucket}/${key}`);
       return;
     }
 
-    const { PutObjectCommand } = await import('@aws-sdk/client-s3');
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: key + '.deleted',
-        Body: JSON.stringify({ deleted_at: new Date().toISOString() }),
-      }),
-    );
+    // A soft delete implementation could be setting a metadata flag or moving to a different path
+    try {
+      const containerClient = this.blobServiceClient.getContainerClient(bucket);
+      const blockBlobClient = containerClient.getBlockBlobClient(key);
+      
+      // We simulate soft delete by renaming/copying it with a .deleted suffix
+      const deletedBlobClient = containerClient.getBlockBlobClient(key + '.deleted');
+      await deletedBlobClient.uploadData(Buffer.from(JSON.stringify({ deleted_at: new Date().toISOString() })));
+      // Note: We don't actually delete the original here to simulate S3 marker behavior, 
+      // or we could delete the original blob depending on exact requirements.
+    } catch (err) {
+      this.logger.error(`Azure Soft Delete Error for ${key}: ${(err as Error).message}`);
+    }
   }
 
   async hardDelete(bucket: string, key: string): Promise<void> {
     if (!this.initialized) {
-      this.logger.warn(`[S3-MOCK] Hard delete ${bucket}/${key}`);
+      this.logger.warn(`[AZURE-MOCK] Hard delete ${bucket}/${key}`);
       return;
     }
 
-    const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
-    await this.s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+    try {
+      const containerClient = this.blobServiceClient.getContainerClient(bucket);
+      const blockBlobClient = containerClient.getBlockBlobClient(key);
+      await blockBlobClient.delete();
+    } catch (err) {
+      this.logger.error(`Azure Hard Delete Error for ${key}: ${(err as Error).message}`);
+    }
   }
 
   async exists(bucket: string, key: string): Promise<boolean> {
     if (!this.initialized) return false;
 
     try {
-      const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
-      await this.s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
-      return true;
+      const containerClient = this.blobServiceClient.getContainerClient(bucket);
+      const blockBlobClient = containerClient.getBlockBlobClient(key);
+      return await blockBlobClient.exists();
     } catch {
       return false;
     }
