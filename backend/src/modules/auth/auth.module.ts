@@ -9,6 +9,7 @@ import { AuthRepository } from './auth.repository';
 import { SessionEntity } from './entities/session.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { SmsModule } from '../../shared/sms/sms.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       }),
       inject: [ConfigService],
     }),
+    SmsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, JwtStrategy],
