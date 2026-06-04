@@ -27,7 +27,7 @@ import * as fs from 'fs';
         entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
         migrations: [__dirname + '/../../database/migrations/*{.ts,.js}'],
         synchronize: false,
-        migrationsRun: true,
+        migrationsRun: process.env.RUN_MIGRATIONS === 'true',
         logging:
           process.env.NODE_ENV === 'development'
             ? 'all'
@@ -75,6 +75,7 @@ import * as fs from 'fs';
             database: config.get('database.database'),
             username: config.get('database.username'),
             password: config.get('database.password'),
+            ssl: config.get('database.ssl') ? { rejectUnauthorized: false } : false,
             entities: [__dirname + '/../../**/*.entity{.ts,.js}'],
             synchronize: false,
             logging: false,
