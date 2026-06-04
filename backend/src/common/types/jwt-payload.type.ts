@@ -9,10 +9,10 @@ export interface JwtPayload {
   role: Role;
   /** User locale (en, hi, ta, te, mr, bn) */
   locale: string;
-  /** Issuer */
-  iss: string;
-  /** Audience */
-  aud: string;
+  /** Issuer (set by JwtModule signOptions) */
+  iss?: string;
+  /** Audience (set by JwtModule signOptions) */
+  aud?: string;
   /** Issued at (epoch seconds, added by JWT lib) */
   iat?: number;
   /** Expiration (epoch seconds, added by JWT lib) */
