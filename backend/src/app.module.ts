@@ -17,6 +17,7 @@ import { KafkaModule } from './shared/kafka/kafka.module';
 import { StorageModule } from './shared/storage/storage.module';
 
 import { AuthModule } from './modules/auth/auth.module';
+import { KycModule } from './modules/kyc/kyc.module';
 
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -51,6 +52,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
 
     // Feature modules
     AuthModule,
+    KycModule,
   ],
   providers: [
     // Global guards (applied to all routes)

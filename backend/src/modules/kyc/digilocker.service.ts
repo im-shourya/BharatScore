@@ -1,0 +1,207 @@
+import { Injectable, Logger, BadGatewayException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+
+// ── Types ─────────────────────────────────────────────────
+export interface SetuSessionResponse {
+  id: string;
+  status: 'unauthenticated' | 'authenticated' | 'revoked';
+  url: string;
+  validUpto: string;
+}
+
+export interface SetuStatusResponse extends SetuSessionResponse {
+  digilockerUserDetails?: {
+    digilockerId: string;
+    email: string;
+    phoneNumber: string;
+  };
+  traceId: string;
+}
+
+export interface AadhaarKycData {
+  maskedNumber: string;
+  name: string;
+  dateOfBirth: string;
+  gender: string;
+  address: {
+    careOf: string;
+    country: string;
+    district: string;
+    house: string;
+    landmark: string;
+    locality: string;
+    pin: string;
+    postOffice: string;
+    state: string;
+    street: string;
+    subDistrict: string;
+    vtc: string;
+  };
+  photo: string; // base64 encoded
+  verified: {
+    email: boolean;
+    phone: boolean;
+    signature: boolean; // DigiLocker XML signature validity
+  };
+  xml: {
+    fileUrl: string; // S3 URL to signed Aadhaar XML
+    shareCode: string;
+    validUntil: string;
+  };
+}
+
+export interface SetuAadhaarResponse {
+  aadhaar: AadhaarKycData;
+  id: string;
+  status: string;
+}
+
+export interface SetuDocumentResponse {
+  fileUrl: string;
+  validUpto: string;
+}
+
+// ── Service ───────────────────────────────────────────────
+@Injectable()
+export class DigiLockerService {
+  private readonly logger = new Logger(DigiLockerService.name);
+  private readonly baseUrl: string;
+  private readonly headers: Record<string, string>;
+
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly config: ConfigService,
+  ) {
+    this.baseUrl = this.config.get<string>('SETU_BASE_URL') || '';
+    this.headers = {
+      'Content-Type': 'application/json',
+      'x-client-id': this.config.get<string>('SETU_CLIENT_ID') || '',
+      'x-client-secret': this.config.get<string>('SETU_CLIENT_SECRET') || '',
+      'x-product-instance-id': this.config.get<string>('SETU_PRODUCT_INSTANCE_ID') || '',
+    };
+  }
+
+  // ── Step 1: Create DigiLocker Session ────────────────────
+  async createSession(redirectUrl: string): Promise<SetuSessionResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/api/digilocker`,
+          { redirectUrl },
+          { headers: this.headers },
+        ),
+      );
+      this.logger.log(`DigiLocker session created: ${response.data.id}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error('Failed to create DigiLocker session', error?.response?.data);
+      throw new BadGatewayException({
+        code: 'DIGILOCKER_SESSION_FAILED',
+        message: 'Could not initiate DigiLocker session. Try again.',
+      });
+    }
+  }
+
+  // ── Step 2: Check Session Status ─────────────────────────
+  async getStatus(sessionId: string): Promise<SetuStatusResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(
+          `${this.baseUrl}/api/digilocker/${sessionId}/status`,
+          { headers: this.headers },
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Failed to get DigiLocker status for: ${sessionId}`);
+      throw new BadGatewayException({ code: 'DIGILOCKER_STATUS_FAILED' });
+    }
+  }
+
+  // ── Step 3: Fetch Aadhaar XML (KYC Core) ─────────────────
+  // API: GET /api/digilocker/:id/aadhaar
+  async fetchAadhaarXml(sessionId: string): Promise<SetuAadhaarResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(
+          `${this.baseUrl}/api/digilocker/${sessionId}/aadhaar`,
+          { headers: this.headers },
+        ),
+      );
+
+      const data: SetuAadhaarResponse = response.data;
+
+      // Validate XML signature is verified by DigiLocker
+      if (!data.aadhaar.verified?.signature) {
+        this.logger.warn(`Aadhaar XML signature not verified for session: ${sessionId}`);
+      }
+
+      this.logger.log(`Aadhaar KYC fetched successfully for session: ${sessionId}`);
+      return data;
+    } catch (error) {
+      this.logger.error(`Aadhaar fetch failed for session: ${sessionId}`, error?.response?.data);
+      throw new BadGatewayException({
+        code: 'AADHAAR_FETCH_FAILED',
+        message: 'Could not fetch Aadhaar data from DigiLocker.',
+      });
+    }
+  }
+
+  // ── Step 4: Fetch Other Documents (PAN, DL, etc.) ────────
+  async fetchDocument(
+    sessionId: string,
+    docType: string,
+    orgId: string,
+    format: 'pdf' | 'xml' | 'jpeg',
+    parameters: Array<{ name: string; value: string }>,
+  ): Promise<SetuDocumentResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/api/digilocker/${sessionId}/document`,
+          {
+            docType,
+            orgId,
+            format,
+            consent: 'Y',
+            parameters,
+          },
+          { headers: this.headers },
+        ),
+      );
+      return response.data;
+    } catch (error) {
+      this.logger.error(`Document fetch failed for session: ${sessionId}, docType: ${docType}`);
+      throw new BadGatewayException({ code: 'DOCUMENT_FETCH_FAILED' });
+    }
+  }
+
+  // ── Step 5: Revoke Token ──────────────────────────────────
+  async revokeSession(sessionId: string): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.httpService.get(
+          `${this.baseUrl}/api/digilocker/${sessionId}/revoke`,
+          { headers: this.headers },
+        ),
+      );
+      this.logger.log(`DigiLocker session revoked: ${sessionId}`);
+    } catch (error) {
+      // Non-critical — log but don't throw
+      this.logger.warn(`Failed to revoke session: ${sessionId}`);
+    }
+  }
+
+  // ── Utility: Get List of Available Documents ──────────────
+  async listAvailableDocuments() {
+    const response = await firstValueFrom(
+      this.httpService.get(
+        `${this.baseUrl}/api/digilocker/documents`,
+        { headers: this.headers },
+      ),
+    );
+    return response.data;
+  }
+}
