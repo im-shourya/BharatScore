@@ -77,7 +77,7 @@ export class DigiLockerService {
     this.baseUrl = this.config.get<string>('SETU_BASE_URL') || '';
     this.headers = {
       'Content-Type': 'application/json',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'User-Agent': 'BharatScore-Backend/1.0',
       'x-client-id': this.config.get<string>('SETU_CLIENT_ID') || '',
       'x-client-secret': this.config.get<string>('SETU_CLIENT_SECRET') || '',
       'x-product-instance-id': this.config.get<string>('SETU_PRODUCT_INSTANCE_ID') || '',
@@ -105,17 +105,7 @@ export class DigiLockerService {
         this.httpService.post(
           url,
           { redirectUrl },
-          this.getRequestConfig({
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'application/json, text/plain, */*',
-            'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
-            'Connection': 'keep-alive',
-            'Origin': 'https://bharatscore.vercel.app',
-            'Referer': 'https://bharatscore.vercel.app/',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'cross-site',
-          }),
+          this.getRequestConfig(),
         ),
       );
       this.logger.log(`DigiLocker session created: ${response.data.id}`);
