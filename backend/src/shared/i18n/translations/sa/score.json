@@ -1,0 +1,26 @@
+{
+  "bands": {
+    "very_low": "Very Low Risk",
+    "low": "Low Risk",
+    "medium": "Medium Risk",
+    "high": "High Risk",
+    "very_high": "Very High Risk"
+  },
+  "factors": {
+    "bill_ontime_ratio": "On-time bill payments",
+    "bill_streak_max": "Longest payment streak",
+    "upi_tx_count": "UPI transaction activity",
+    "ecom_return_rate": "Purchase return behaviour",
+    "geo_stability": "Location stability",
+    "cash_flow_stability": "Cash flow regularity",
+    "psychometric_risk": "Financial risk profile",
+    "income_regularity": "Income consistency",
+    "spending_volatility": "Spending stability"
+  },
+  "explanation": "Your {factor} contributed {direction} {points} points to your score.",
+  "improvement": {
+    "bill_ontime_ratio": "Pay your phone and utility bills on time every month to improve this factor.",
+    "geo_stability": "Maintaining a consistent residence improves your stability score.",
+    "cash_flow_stability": "Regular income deposits strengthen your cash flow profile."
+  }
+}
