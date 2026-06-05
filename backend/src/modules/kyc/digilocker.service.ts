@@ -2,6 +2,7 @@ import { Injectable, Logger, BadGatewayException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // ── Types ─────────────────────────────────────────────────
 export interface SetuSessionResponse {
@@ -69,6 +70,7 @@ export class DigiLockerService {
   private readonly logger = new Logger(DigiLockerService.name);
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
+  private readonly proxyAgent?: HttpsProxyAgent;
 
   constructor(
     private readonly httpService: HttpService,
@@ -80,6 +82,19 @@ export class DigiLockerService {
       'x-client-id': this.config.get<string>('SETU_CLIENT_ID') || '',
       'x-client-secret': this.config.get<string>('SETU_CLIENT_SECRET') || '',
       'x-product-instance-id': this.config.get<string>('SETU_PRODUCT_INSTANCE_ID') || '',
+    };
+
+    const proxyUrl = this.config.get<string>('SETU_PROXY_URL');
+    if (proxyUrl) {
+      this.logger.log(`Using Proxy Agent for Setu requests: ${proxyUrl}`);
+      this.proxyAgent = new HttpsProxyAgent(proxyUrl);
+    }
+  }
+
+  private getRequestConfig(extraHeaders: Record<string, string> = {}) {
+    return {
+      headers: { ...this.headers, ...extraHeaders },
+      ...(this.proxyAgent ? { httpsAgent: this.proxyAgent } : {}),
     };
   }
 
@@ -98,21 +113,17 @@ export class DigiLockerService {
         this.httpService.post(
           url,
           { redirectUrl },
-          { 
-            headers: {
-              ...this.headers,
-              // Spoofing full browser headers to try to bypass Setu's Sandbox WAF on Render IPs
-              'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-              'Accept': 'application/json, text/plain, */*',
-              'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
-              'Connection': 'keep-alive',
-              'Origin': 'https://bharatscore.vercel.app',
-              'Referer': 'https://bharatscore.vercel.app/',
-              'Sec-Fetch-Dest': 'empty',
-              'Sec-Fetch-Mode': 'cors',
-              'Sec-Fetch-Site': 'cross-site',
-            } 
-          },
+          this.getRequestConfig({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
+            'Connection': 'keep-alive',
+            'Origin': 'https://bharatscore.vercel.app',
+            'Referer': 'https://bharatscore.vercel.app/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+          }),
         ),
       );
       this.logger.log(`DigiLocker session created: ${response.data.id}`);
@@ -148,12 +159,9 @@ export class DigiLockerService {
         this.httpService.post(
           `${normalizedBase}/api/digilocker`,
           { redirectUrl: 'https://example.com/test' },
-          { 
-            headers: {
-              ...this.headers,
-              'User-Agent': 'Mozilla/5.0 (Node.js) API-Client/1.0',
-            } 
-          },
+          this.getRequestConfig({
+            'User-Agent': 'Mozilla/5.0 (Node.js) API-Client/1.0',
+          }),
         ),
       );
       return {
@@ -180,7 +188,7 @@ export class DigiLockerService {
       const response = await firstValueFrom(
         this.httpService.get(
           `${this.baseUrl}/api/digilocker/${sessionId}/status`,
-          { headers: this.headers },
+          this.getRequestConfig()
         ),
       );
       return response.data;
@@ -197,7 +205,7 @@ export class DigiLockerService {
       const response = await firstValueFrom(
         this.httpService.get(
           `${this.baseUrl}/api/digilocker/${sessionId}/aadhaar`,
-          { headers: this.headers },
+          this.getRequestConfig()
         ),
       );
 
@@ -238,7 +246,7 @@ export class DigiLockerService {
             consent: 'Y',
             parameters,
           },
-          { headers: this.headers },
+          this.getRequestConfig()
         ),
       );
       return response.data;
@@ -254,7 +262,7 @@ export class DigiLockerService {
       await firstValueFrom(
         this.httpService.get(
           `${this.baseUrl}/api/digilocker/${sessionId}/revoke`,
-          { headers: this.headers },
+          this.getRequestConfig()
         ),
       );
       this.logger.log(`DigiLocker session revoked: ${sessionId}`);
@@ -269,7 +277,7 @@ export class DigiLockerService {
     const response = await firstValueFrom(
       this.httpService.get(
         `${this.baseUrl}/api/digilocker/documents`,
-        { headers: this.headers },
+        this.getRequestConfig()
       ),
     );
     return response.data;
