@@ -21,6 +21,7 @@ import { AuthResponseDto } from './dto/auth-response.dto';
 import { Public } from '../../decorators/public.decorator';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
+import { I18n, I18nContext } from 'nestjs-i18n';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -33,8 +34,11 @@ export class AuthController {
   @ApiOperation({ summary: 'Send Aadhaar OTP to mobile number' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded or OTP locked' })
-  async sendOtp(@Body() dto: SendOtpDto) {
-    return this.authService.sendOtp(dto);
+  async sendOtp(
+    @Body() dto: SendOtpDto,
+    @I18n() i18n: I18nContext,
+  ) {
+    return this.authService.sendOtp(dto, i18n.lang);
   }
 
   @Public()
@@ -48,8 +52,9 @@ export class AuthController {
     @Body() dto: VerifyOtpDto,
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string,
+    @I18n() i18n: I18nContext,
   ) {
-    return this.authService.verifyOtp(dto, ip, userAgent);
+    return this.authService.verifyOtp(dto, i18n.lang, ip, userAgent);
   }
 
   @Public()
