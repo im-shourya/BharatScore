@@ -18,6 +18,7 @@ import { StorageModule } from './shared/storage/storage.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { KycModule } from './modules/kyc/kyc.module';
+import { I18nAppModule } from './shared/i18n/i18n.module';
 
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
@@ -53,6 +54,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     // Feature modules
     AuthModule,
     KycModule,
+    I18nAppModule,
   ],
   providers: [
     // Global guards (applied to all routes)
