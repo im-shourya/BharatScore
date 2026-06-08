@@ -85,10 +85,15 @@ export class DigiLockerService {
 
   // ── Step 1: Create DigiLocker Session ────────────────────
   async createSession(redirectUrl: string): Promise<SetuSessionResponse> {
+    const url = `${this.baseUrl}/api/digilocker/`;
+    this.logger.log(`Creating DigiLocker session → ${url}`);
+    this.logger.log(`Redirect URL: ${redirectUrl}`);
+    this.logger.log(`Headers: x-client-id=${this.headers['x-client-id']?.substring(0, 8)}..., x-product-instance-id=${this.headers['x-product-instance-id']?.substring(0, 8)}...`);
+
     try {
       const response = await firstValueFrom(
         this.httpService.post(
-          `${this.baseUrl}/api/digilocker`,
+          url,
           { redirectUrl },
           { headers: this.headers },
         ),
@@ -96,11 +101,53 @@ export class DigiLockerService {
       this.logger.log(`DigiLocker session created: ${response.data.id}`);
       return response.data;
     } catch (error) {
-      this.logger.error('Failed to create DigiLocker session', error?.response?.data);
+      const status = error?.response?.status;
+      const data = error?.response?.data;
+      const headers = error?.response?.headers;
+      this.logger.error(
+        `Failed to create DigiLocker session | HTTP ${status} | Response: ${JSON.stringify(data)} | Trace: ${data?.traceId ?? 'none'}`,
+      );
       throw new BadGatewayException({
         code: 'DIGILOCKER_SESSION_FAILED',
-        message: 'Could not initiate DigiLocker session. Try again.',
+        message: `Could not initiate DigiLocker session. Setu responded: ${JSON.stringify(data)}`,
+        setu_status: status,
+        setu_trace: data?.traceId,
       });
+    }
+  }
+
+  // ── Diagnostic: Test Setu connectivity ────────────────────
+  async testConnection(): Promise<{
+    status: string;
+    base_url: string;
+    client_id_prefix: string;
+    product_instance_id: string;
+    setu_response?: any;
+    error?: string;
+  }> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${this.baseUrl}/api/digilocker/`,
+          { redirectUrl: 'https://example.com/test' },
+          { headers: this.headers },
+        ),
+      );
+      return {
+        status: 'success',
+        base_url: this.baseUrl,
+        client_id_prefix: this.headers['x-client-id']?.substring(0, 8) + '...',
+        product_instance_id: this.headers['x-product-instance-id'],
+        setu_response: response.data,
+      };
+    } catch (error) {
+      return {
+        status: 'failed',
+        base_url: this.baseUrl,
+        client_id_prefix: this.headers['x-client-id']?.substring(0, 8) + '...',
+        product_instance_id: this.headers['x-product-instance-id'],
+        error: JSON.stringify(error?.response?.data ?? error.message),
+      };
     }
   }
 
