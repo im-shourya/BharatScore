@@ -254,8 +254,6 @@ export class AuthService {
       jti,
       role: user.role,
       locale: user.locale,
-      iss: 'credsaathi-auth',
-      aud: 'credsaathi-api',
     };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = crypto.randomBytes(64).toString('hex');
