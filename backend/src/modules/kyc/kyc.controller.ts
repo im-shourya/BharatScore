@@ -97,4 +97,10 @@ export class KycController {
   async getStatus(@CurrentUser() user: JwtPayload) {
     return this.kycService.getKycStatus(user.sub);
   }
+
+  @Get('test-setu')
+  @ApiOperation({ summary: 'Diagnostic endpoint to test Setu API connectivity' })
+  async testSetu() {
+    return this.kycService.testSetuConnection();
+  }
 }
