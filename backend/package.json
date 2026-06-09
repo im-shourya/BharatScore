@@ -46,6 +46,7 @@
     "class-validator": "^0.15.1",
     "compression": "^1.8.1",
     "helmet": "^8.2.0",
+    "https-proxy-agent": "^5.0.1",
     "ioredis": "^5.11.0",
     "kafkajs": "^2.2.4",
     "mongoose": "^9.6.3",
