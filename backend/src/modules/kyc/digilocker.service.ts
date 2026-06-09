@@ -2,7 +2,6 @@ import { Injectable, Logger, BadGatewayException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // ── Types ─────────────────────────────────────────────────
 export interface SetuSessionResponse {
@@ -70,7 +69,6 @@ export class DigiLockerService {
   private readonly logger = new Logger(DigiLockerService.name);
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
-  private readonly proxyAgent?: HttpsProxyAgent;
 
   constructor(
     private readonly httpService: HttpService,
@@ -79,22 +77,16 @@ export class DigiLockerService {
     this.baseUrl = this.config.get<string>('SETU_BASE_URL') || '';
     this.headers = {
       'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       'x-client-id': this.config.get<string>('SETU_CLIENT_ID') || '',
       'x-client-secret': this.config.get<string>('SETU_CLIENT_SECRET') || '',
       'x-product-instance-id': this.config.get<string>('SETU_PRODUCT_INSTANCE_ID') || '',
     };
-
-    const proxyUrl = this.config.get<string>('SETU_PROXY_URL');
-    if (proxyUrl) {
-      this.logger.log(`Using Proxy Agent for Setu requests: ${proxyUrl}`);
-      this.proxyAgent = new HttpsProxyAgent(proxyUrl);
-    }
   }
 
   private getRequestConfig(extraHeaders: Record<string, string> = {}) {
     return {
       headers: { ...this.headers, ...extraHeaders },
-      ...(this.proxyAgent ? { httpsAgent: this.proxyAgent } : {}),
     };
   }
 
