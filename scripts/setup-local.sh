@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
 # BharatScore — Post Docker-Compose Setup
-# Run after: docker compose up -d
+# Run after: docker compose up -dnkk do un what is bharat
 # ============================================================================
 set -e
 
