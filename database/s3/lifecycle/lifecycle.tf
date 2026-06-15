@@ -3,10 +3,6 @@
 # Section 18 of the database specification
 # ============================================================================
 
-
-
-
-
 resource "aws_s3_bucket_lifecycle_configuration" "kyc_lifecycle" {
   bucket = aws_s3_bucket.kyc.id
 
