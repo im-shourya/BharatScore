@@ -1,0 +1,4 @@
+{
+  "note": "Run python train.py to generate config.json and model artifacts locally",
+  "m3_model_path": "models/m3_liquidity_lstm.keras"
+}
