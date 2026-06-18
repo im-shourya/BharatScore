@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Trained artifacts — regenerate with: python train.py
+artifacts/*.joblib
+artifacts/*.npz
+artifacts/eval_arrays.npz
+models/*.keras
+models/*.h5
+
+# Keep folder structure + config template
+!artifacts/.gitkeep
+!artifacts/config.example.json
+!models/.gitkeep
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs / local test
+logs/
+*.png
