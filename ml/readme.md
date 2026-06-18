@@ -46,4 +46,4 @@ streamlit run streamlit_app.py
 | `app.py` | FastAPI for frontend |
 | `notebooks/` | Jupyter demo notebook |
 
-**Author:** [Your Name] — ML pipeline for hackathon integration.
+**Author:** Anmol — ML pipeline for hackathon integration.
