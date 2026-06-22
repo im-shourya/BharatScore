@@ -1,11 +1,12 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
+import { Logger } from '@nestjs/common';
 import { I18nService } from 'nestjs-i18n';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
-// import { UserEntity } from '../user/entities/user.entity';
-// import { SmsService } from '../../shared/sms/sms.service';
+import { UserEntity } from '../user/entities/user.entity';
+import { SmsService } from '../../shared/sms/sms.service';
 
 export interface QueueNotificationParams {
   notificationId: string;
@@ -17,12 +18,15 @@ export interface QueueNotificationParams {
 
 @Processor('notifications')
 export class NotificationProcessor {
+  private readonly logger = new Logger(NotificationProcessor.name);
+
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
     private readonly i18n: I18nService,
-    // @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
-    // private readonly smsService: SmsService,
+    private readonly smsService: SmsService,
   ) {}
 
   @Process('send')
@@ -30,29 +34,40 @@ export class NotificationProcessor {
     const { notificationId, userId, eventType, channel, data } = job.data;
     
     // Fetch user for locale and contact info
-    // const user = await this.userRepository.findOne({ where: { id: userId } });
-    // const lang = user?.locale ?? 'en';
-    const lang = 'en'; // Mock for now until UserModule is fully integrated
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const lang = user?.locale ?? 'en';
 
     const content = await this.buildContent(eventType, data, lang);
 
     switch (channel) {
       case 'sms':
-        // await this.smsService.send(user.mobile_number, content.text);
-        console.log(`[Mock SMS to User ${userId}]: ${content.text}`);
+        if (user?.mobile_number) {
+          const result = await this.smsService.sendOtp(user.mobile_number, content.text).catch(err => {
+            this.logger.error(`SMS delivery failed for user ${userId}: ${err.message}`);
+            return { success: false, error: err.message };
+          });
+          if (result.success) {
+            this.logger.log(`SMS sent to user ${userId}`);
+          }
+        } else {
+          this.logger.warn(`No mobile number for user ${userId}, skipping SMS`);
+        }
         break;
       case 'whatsapp':
-        console.log(`[Mock WA to User ${userId}]: ${content.template}`);
+        this.logger.log(`[WhatsApp to User ${userId}]: ${content.template}`);
         break;
       case 'email':
-        console.log(`[Mock Email to User ${userId}]`);
+        this.logger.log(`[Email to User ${userId}]`);
         break;
       case 'push':
-        console.log(`[Mock Push to User ${userId}]`);
+        this.logger.log(`[Push to User ${userId}]`);
         break;
     }
 
-    await this.notificationRepository.update(notificationId, { status: 'sent' as any });
+    await this.notificationRepository.update(notificationId, { status: 'sent' as any }).catch(() => {
+      // Non-critical — notification record may not exist yet
+      this.logger.warn(`Could not update notification status for: ${notificationId}`);
+    });
   }
 
   private async buildContent(eventType: string, data: any, lang: string) {
@@ -71,3 +86,4 @@ export class NotificationProcessor {
     return handler(data, lang).catch(() => ({ text: 'Notification fallback' }));
   }
 }
+

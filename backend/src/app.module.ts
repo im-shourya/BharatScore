@@ -11,6 +11,7 @@ import mongodbConfig from './config/mongodb.config';
 import kafkaConfig from './config/kafka.config';
 import storageConfig from './config/storage.config';
 import smsConfig from './config/sms.config';
+import mlConfig from './config/ml.config';
 import { DatabaseModule } from './shared/database/database.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { EncryptionModule } from './shared/encryption/encryption.module';
@@ -42,7 +43,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig, smsConfig],
+      load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig, smsConfig, mlConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
