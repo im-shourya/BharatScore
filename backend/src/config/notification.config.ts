@@ -3,9 +3,11 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('notification', () => ({
   email: {
     enabled: process.env.EMAIL_ENABLED === 'true',
-    apiKey: process.env.EMAIL_API_KEY || '',
-    sender: process.env.EMAIL_SENDER || 'hello@bharatscore.in',
-    apiUrl: process.env.EMAIL_API_URL || 'https://api.resend.com/emails',
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    sender: process.env.EMAIL_SENDER || process.env.SMTP_USER || 'hello@bharatscore.in',
   },
   whatsapp: {
     enabled: process.env.WHATSAPP_ENABLED === 'true',
