@@ -26,4 +26,14 @@ export class ScoringRepository {
   async findByUserId(userId: string): Promise<CreditScoreEntity | null> {
     return this.scoreRepo.findOne({ where: { user_id: userId }, order: { generated_at: 'DESC' } });
   }
+
+  async getAverageScore(from: string, to: string): Promise<number> {
+    const result = await this.scoreRepo
+      .createQueryBuilder('score')
+      .select('AVG(score.score)', 'avg')
+      .where('score.created_at BETWEEN :from AND :to', { from, to })
+      .getRawOne();
+      
+    return result?.avg ? parseFloat(result.avg) : 0;
+  }
 }
