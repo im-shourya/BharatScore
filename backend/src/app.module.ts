@@ -14,7 +14,7 @@ import smsConfig from './config/sms.config';
 import { DatabaseModule } from './shared/database/database.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { EncryptionModule } from './shared/encryption/encryption.module';
-import { MongodbModule } from './shared/mongodb/mongodb.module';
+// import { MongodbModule } from './shared/mongodb/mongodb.module';
 import { KafkaModule } from './shared/kafka/kafka.module';
 import { StorageModule } from './shared/storage/storage.module';
 import { SmsModule } from './shared/sms/sms.module';
@@ -70,7 +70,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     DatabaseModule,
     CacheModule,
     EncryptionModule,
-    MongodbModule,
+    // MongodbModule,
     KafkaModule,
     StorageModule,
     SmsModule,
