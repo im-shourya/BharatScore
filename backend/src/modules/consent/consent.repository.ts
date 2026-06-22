@@ -42,4 +42,19 @@ export class ConsentRepository {
       { is_active: false, revoked_at: new Date() },
     );
   }
+
+  async getStats(from: string, to: string): Promise<any> {
+    const active = await this.consentRepo
+      .createQueryBuilder('c')
+      .where('c.created_at BETWEEN :from AND :to', { from, to })
+      .andWhere('c.is_active = true')
+      .getCount();
+      
+    const revoked = await this.consentRepo
+      .createQueryBuilder('c')
+      .where('c.revoked_at BETWEEN :from AND :to', { from, to })
+      .getCount();
+
+    return { active, revoked };
+  }
 }

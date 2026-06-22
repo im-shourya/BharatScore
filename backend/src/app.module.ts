@@ -35,6 +35,7 @@ import { DocumentModule } from './modules/document/document.module';
 import { ConsentModule } from './modules/consent/consent.module';
 import { ScoringModule } from './modules/scoring/scoring.module';
 import { LoanModule } from './modules/loan/loan.module';
+import { AdminModule } from './modules/admin/admin.module';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { CustomThrottlerGuard } from './guards/throttler.guard';
@@ -95,6 +96,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     ConsentModule,
     ScoringModule,
     LoanModule,
+    AdminModule,
   ],
   providers: [
     // Global guards (applied to all routes)

@@ -25,4 +25,13 @@ export class UserRepository {
       .where('user.deletion_requested_at BETWEEN :from AND :to', { from, to })
       .getCount();
   }
+
+  async findAll(skip: number = 0, take: number = 20, filters?: any): Promise<[UserEntity[], number]> {
+    const qb = this.repository.createQueryBuilder('user');
+    
+    if (filters?.role) qb.andWhere('user.role = :role', { role: filters.role });
+    if (filters?.status) qb.andWhere('user.status = :status', { status: filters.status });
+    
+    return qb.orderBy('user.created_at', 'DESC').skip(skip).take(take).getManyAndCount();
+  }
 }
