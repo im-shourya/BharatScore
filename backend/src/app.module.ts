@@ -12,13 +12,17 @@ import kafkaConfig from './config/kafka.config';
 import storageConfig from './config/storage.config';
 import smsConfig from './config/sms.config';
 import mlConfig from './config/ml.config';
+import notificationConfig from './config/notification.config';
 import { DatabaseModule } from './shared/database/database.module';
 import { CacheModule } from './shared/cache/cache.module';
 import { EncryptionModule } from './shared/encryption/encryption.module';
 // import { MongodbModule } from './shared/mongodb/mongodb.module';
 import { KafkaModule } from './shared/kafka/kafka.module';
-import { StorageModule } from './shared/storage/storage.module';
 import { SmsModule } from './shared/sms/sms.module';
+import { EmailModule } from './shared/email/email.module';
+import { WhatsappModule } from './shared/whatsapp/whatsapp.module';
+import { PushModule } from './shared/push/push.module';
+import { StorageModule } from './shared/storage/storage.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { KycModule } from './modules/kyc/kyc.module';
@@ -43,7 +47,7 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig, smsConfig, mlConfig],
+      load: [databaseConfig, jwtConfig, redisConfig, mongodbConfig, kafkaConfig, storageConfig, smsConfig, mlConfig, notificationConfig],
       envFilePath: ['.env.local', '.env'],
     }),
 
@@ -75,6 +79,9 @@ import { AllExceptionsFilter } from './filters/all-exceptions.filter';
     KafkaModule,
     StorageModule,
     SmsModule,
+    EmailModule,
+    WhatsappModule,
+    PushModule,
 
     // Feature modules
     AuthModule,
