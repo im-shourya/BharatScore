@@ -75,6 +75,11 @@ export class LoanRepository {
     return this.repository.find({ where: { state }, order: { created_at: 'ASC' } });
   }
 
+  async findPendingReview(): Promise<LoanApplicationEntity[]> {
+    return this.repository.find({
+      where: { state: In([LoanState.SUBMITTED, LoanState.UNDER_REVIEW, LoanState.PENDING_SECOND_APPROVAL]) },
+      order: { created_at: 'ASC' },
+    });
   }
 
   // ── Admin Analytics ────────────────────────────────────────
@@ -101,5 +106,3 @@ export class LoanRepository {
     return approvedCount / total;
   }
 }
-
-
