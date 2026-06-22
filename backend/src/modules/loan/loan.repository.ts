@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In, Not } from 'typeorm';
 import { LoanApplicationEntity } from './entities/loan-application.entity';
+import { LoanStateTransitionEntity } from './entities/loan-state-transition.entity';
 import { LoanState } from '../../common/enums/loan-state.enum';
 
 @Injectable()
@@ -9,11 +10,17 @@ export class LoanRepository {
   constructor(
     @InjectRepository(LoanApplicationEntity)
     private readonly repository: Repository<LoanApplicationEntity>,
+    @InjectRepository(LoanStateTransitionEntity)
+    private readonly transitionRepository: Repository<LoanStateTransitionEntity>,
   ) {}
 
   async create(data: Partial<LoanApplicationEntity>): Promise<LoanApplicationEntity> {
     const loan = this.repository.create(data);
     return this.repository.save(loan);
+  }
+
+  async findById(id: string): Promise<LoanApplicationEntity | null> {
+    return this.repository.findOne({ where: { id } });
   }
 
   async findByUserId(userId: string): Promise<LoanApplicationEntity[]> {
@@ -24,7 +31,55 @@ export class LoanRepository {
     return this.repository.findOne({ where: { id, user_id: userId } });
   }
 
+  async findActiveByUser(userId: string): Promise<LoanApplicationEntity | null> {
+    const activeStates = [
+      LoanState.DRAFT,
+      LoanState.SUBMITTED,
+      LoanState.UNDER_REVIEW,
+      LoanState.PENDING_SECOND_APPROVAL,
+      LoanState.APPROVED,
+      LoanState.DISBURSED,
+      LoanState.REPAYING,
+    ];
+    return this.repository.findOne({
+      where: { user_id: userId, state: In(activeStates) },
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async update(id: string, data: Partial<LoanApplicationEntity>): Promise<void> {
+    await this.repository.update(id, data);
+  }
+
   async updateStatus(id: string, state: LoanState): Promise<void> {
     await this.repository.update(id, { state });
   }
+
+  // ── State Transitions ──────────────────────────────────────
+
+  async recordTransition(data: Partial<LoanStateTransitionEntity>): Promise<LoanStateTransitionEntity> {
+    const transition = this.transitionRepository.create(data);
+    return this.transitionRepository.save(transition);
+  }
+
+  async getTransitionHistory(loanId: string): Promise<LoanStateTransitionEntity[]> {
+    return this.transitionRepository.find({
+      where: { loan_id: loanId },
+      order: { transitioned_at: 'ASC' },
+    });
+  }
+
+  // ── Admin Queries ──────────────────────────────────────────
+
+  async findByState(state: LoanState): Promise<LoanApplicationEntity[]> {
+    return this.repository.find({ where: { state }, order: { created_at: 'ASC' } });
+  }
+
+  async findPendingReview(): Promise<LoanApplicationEntity[]> {
+    return this.repository.find({
+      where: { state: In([LoanState.SUBMITTED, LoanState.UNDER_REVIEW, LoanState.PENDING_SECOND_APPROVAL]) },
+      order: { created_at: 'ASC' },
+    });
+  }
 }
+
