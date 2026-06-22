@@ -75,11 +75,31 @@ export class LoanRepository {
     return this.repository.find({ where: { state }, order: { created_at: 'ASC' } });
   }
 
-  async findPendingReview(): Promise<LoanApplicationEntity[]> {
-    return this.repository.find({
-      where: { state: In([LoanState.SUBMITTED, LoanState.UNDER_REVIEW, LoanState.PENDING_SECOND_APPROVAL]) },
-      order: { created_at: 'ASC' },
-    });
+  }
+
+  // ── Admin Analytics ────────────────────────────────────────
+
+  async countByPeriod(from: string, to: string): Promise<number> {
+    return this.repository
+      .createQueryBuilder('loan')
+      .where('loan.created_at BETWEEN :from AND :to', { from, to })
+      .getCount();
+  }
+
+  async getApprovalRate(from: string, to: string): Promise<number> {
+    const total = await this.countByPeriod(from, to);
+    if (total === 0) return 0;
+
+    const approvedCount = await this.repository
+      .createQueryBuilder('loan')
+      .where('loan.created_at BETWEEN :from AND :to', { from, to })
+      .andWhere('loan.state IN (:...states)', { 
+        states: [LoanState.APPROVED, LoanState.DISBURSED, LoanState.REPAYING, LoanState.CLOSED] 
+      })
+      .getCount();
+
+    return approvedCount / total;
   }
 }
+
 
