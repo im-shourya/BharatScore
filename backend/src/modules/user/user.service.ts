@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { EncryptionService } from '../../shared/encryption/encryption.service';
+import { KycService } from '../kyc/kyc.service';
 // import { KafkaProducerService } from '../../shared/kafka/kafka-producer.service';
 import { I18nService } from 'nestjs-i18n';
 import { UserEntity } from './entities/user.entity';
@@ -12,6 +13,7 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly encryptionService: EncryptionService,
+    private readonly kycService: KycService,
     // private readonly kafkaProducer: KafkaProducerService,
     private readonly i18n: I18nService,
   ) {}
@@ -48,7 +50,14 @@ export class UserService {
     return { current_step: step, next_step: step + 1 };
   }
 
-  private mapToResponse(user: UserEntity) {
+  private async mapToResponse(user: UserEntity) {
+    // Fetch real KYC status from KycService
+    const kyc = await this.kycService.getKycStatus(user.id).catch(() => ({
+      status: null,
+      verified_at: null,
+      fields_verified: [],
+    }));
+
     return {
       id: user.id,
       name: user.full_name_encrypted ? this.encryptionService.decrypt(user.full_name_encrypted) : null,
@@ -57,9 +66,12 @@ export class UserService {
       role: user.role,
       status: user.status,
       locale: user.locale,
-      kyc_status: null, // Would fetch from KYC module
+      kyc_status: kyc.status,
+      kyc_verified_at: kyc.verified_at,
+      kyc_fields_verified: kyc.fields_verified,
       onboarding_step: user.onboarding_step,
       created_at: user.created_at,
     };
   }
 }
+
