@@ -1,36 +1,52 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { DocumentRepository } from './document.repository';
-// import { AzureStorageService } from '../../shared/storage/azure-storage.service';
-// import { KafkaProducerService } from '../../shared/kafka/kafka-producer.service';
+import { StorageService } from '../../shared/storage/storage.service';
 import { DocType } from '../../common/enums/doc-type.enum';
 
 @Injectable()
 export class DocumentService {
+  private readonly logger = new Logger(DocumentService.name);
+
   constructor(
     private readonly documentRepository: DocumentRepository,
-    // private readonly storageService: AzureStorageService,
-    // private readonly kafkaProducer: KafkaProducerService,
+    private readonly storageService: StorageService,
+    private readonly config: ConfigService,
   ) {}
 
   async uploadDocument(userId: string, type: DocType, file: any) {
-    // 1. Upload to Azure Blob Storage
-    // const fileUrl = await this.storageService.upload(file.buffer, file.originalname, 'documents');
-    const fileUrl = `https://mock-storage.com/${userId}/${file.originalname}`;
+    const bucket = this.config.get<string>('STORAGE_CONTAINER_STATEMENTS') || 'credsaathi-documents';
+    const key = `${userId}/${type}/${Date.now()}-${file.originalname}`;
 
-    // 2. Create DB Record
+    // Compute file hash for dedup/integrity
+    const fileHash = crypto
+      .createHash('sha256')
+      .update(file.buffer)
+      .digest('hex');
+
+    // Upload to Azure Blob Storage (falls back to mock if not configured)
+    const uploadResult = await this.storageService.upload({
+      bucket,
+      key,
+      body: file.buffer,
+      contentType: file.mimetype ?? 'application/pdf',
+      metadata: { userId, docType: type, fileHash },
+    });
+
+    this.logger.log(`Document uploaded: ${key} (hash: ${fileHash.substring(0, 12)}...)`);
+
+    // Create DB Record
     const doc = await this.documentRepository.create({
       user_id: userId,
       doc_type: type,
-      s3_key_encrypted: fileUrl,
-      s3_bucket: 'mock-bucket',
-      file_hash: 'mock-hash',
-      size_bytes: file.size ?? 0,
+      s3_key_encrypted: key,
+      s3_bucket: bucket,
+      file_hash: fileHash,
+      size_bytes: file.size ?? file.buffer.length,
       mime_type: file.mimetype ?? 'application/pdf',
       is_verified: false,
     });
-
-    // 3. Emit event for OCR/Parsing
-    // await this.kafkaProducer.emit('document-uploaded', { documentId: doc.id, type, fileUrl });
 
     return doc;
   }
@@ -42,8 +58,14 @@ export class DocumentService {
   async getDocumentUrl(userId: string, documentId: string) {
     const doc = await this.documentRepository.findByIdAndUserId(documentId, userId);
     if (!doc) throw new NotFoundException('Document not found');
-    
-    // return this.storageService.getSignedUrl(doc.s3_key_encrypted);
-    return { url: `${doc.s3_key_encrypted}?sas=mock_token` };
+
+    const url = await this.storageService.getPresignedUrl({
+      bucket: doc.s3_bucket,
+      key: doc.s3_key_encrypted,
+      expiresIn: 900,
+    });
+
+    return { url };
   }
 }
+
