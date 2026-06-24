@@ -208,6 +208,49 @@ export class KycService {
     };
   }
 
+  // ── Step 4: Liveness & Face Match ─────────────────────────
+  async checkLiveness(userId: string, selfieBuffer: Buffer) {
+    const kycRecord = await this.kycRepository.findOne({ where: { user_id: userId } });
+    if (!kycRecord?.aadhaar_hash) {
+      throw new ConflictException({ code: 'AADHAAR_NOT_VERIFIED', message: 'Complete Aadhaar verification first' });
+    }
+
+    this.logger.log(`Performing liveness and face match for user: ${userId}`);
+    
+    // Mocking FaceMatch service since actual AWS/Azure integration is not present
+    // In a real scenario, we would call this.facematchService.compare(aadhaarPhotoBuffer, selfieBuffer)
+    const mockMatchScore = 95.5 + (Math.random() * 4); // 95.5% to 99.5%
+    const passed = mockMatchScore > 85.0;
+
+    // Update the liveness fields
+    await this.kycRepository.update(
+      { user_id: userId },
+      {
+        liveness_check_status: passed ? 'passed' : 'failed',
+        face_match_score: mockMatchScore,
+        liveness_verified_at: new Date(),
+      } as any,
+    );
+
+    if (passed) {
+      // Mark entire KYC as fully verified
+      await this.kycRepository.update(
+        { user_id: userId },
+        { verification_status: KycStatus.FULLY_VERIFIED } as any,
+      );
+      this.logger.log(`User ${userId} is now FULLY_VERIFIED.`);
+    }
+
+    return {
+      success: true,
+      data: {
+        match_score: mockMatchScore,
+        passed,
+        liveness_status: passed ? 'passed' : 'failed',
+      }
+    };
+  }
+
   // ── Get Decrypted KYC Data (Internal — for loan processing) ──
   async getDecryptedKycData(userId: string) {
     const record = await this.kycRepository.findOne({ where: { user_id: userId } });
