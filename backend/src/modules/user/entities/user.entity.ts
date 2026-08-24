@@ -21,6 +21,15 @@ export class UserEntity {
   @Column({ length: 15, unique: true })
   mobile_number: string;
 
+  @Column({ length: 10, unique: true, nullable: true })
+  bank_id: string;
+
+  @Column({ type: 'date', nullable: true })
+  dob: Date;
+
+  @Column({ type: 'int', nullable: true })
+  age: number;
+
   @Column({ type: 'text', nullable: true })
   full_name_encrypted: string;
 
