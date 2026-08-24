@@ -18,4 +18,9 @@ export class UpdateProfileDto {
   @IsString({ message: i18nValidationMessage('errors.VALIDATION_ERROR') })
   @Length(2, 5)
   locale?: string;
+
+  @ApiPropertyOptional({ example: '1990-01-01' })
+  @IsOptional()
+  @IsString({ message: i18nValidationMessage('errors.VALIDATION_ERROR') })
+  dob?: string;
 }

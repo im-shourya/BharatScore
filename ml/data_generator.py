@@ -369,7 +369,7 @@ class BharatDataGenerator:
             + 0.25 * df["spending_volatility"].fillna(0.3)
             + 0.20 * (1.0 - df["cash_flow_ratio"].fillna(1.0).clip(0, 2) / 2.0)
             + 0.20 * (df["overdraft_events_6m"].fillna(1) / 12.0)
-        ).values
+        ).to_numpy(copy=True)
 
         for name in ARCHETYPE_NAMES:
             mask = personas == name
