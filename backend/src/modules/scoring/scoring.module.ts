@@ -15,6 +15,6 @@ import { NotificationModule } from '../notification/notification.module';
   ],
   controllers: [ScoringController],
   providers: [ScoringService, ScoringRepository],
-  exports: [ScoringService],
+  exports: [ScoringService, ScoringRepository],
 })
 export class ScoringModule {}

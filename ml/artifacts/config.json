@@ -1,0 +1,71 @@
+{
+  "seed": 42,
+  "behavioral_features": [
+    "payment_regularity_index",
+    "transaction_stability_score",
+    "spending_discipline_score",
+    "behavioral_risk_composite",
+    "recharge_consistency_score",
+    "late_payment_rate",
+    "upi_txn_count_monthly",
+    "p2p_ratio",
+    "ecomm_return_rate",
+    "merchant_trust_score",
+    "predatory_exposure_index",
+    "behavioral_psychometric_alignment",
+    "digital_trust_score"
+  ],
+  "psychometric_features": [
+    "financial_character_score",
+    "behavioral_consistency_index",
+    "financial_discipline_score",
+    "repayment_ethics_score",
+    "future_orientation_score",
+    "impulsiveness_score",
+    "financial_literacy_score",
+    "payment_regularity_index",
+    "spending_discipline_score"
+  ],
+  "liquidity_tabular_features": [
+    "net_liquidity_score",
+    "liquidity_sustainability_index",
+    "cash_stress_indicator",
+    "liquidity_reserve_ratio",
+    "cash_flow_ratio",
+    "savings_rate",
+    "overdraft_events_6m",
+    "balance_volatility",
+    "monthly_inflow_mean",
+    "monthly_inflow_std",
+    "lifestyle_stability_score"
+  ],
+  "categorical_features": [
+    "employment_type",
+    "education"
+  ],
+  "m3_is_keras": false,
+  "m3_model_path": "artifacts/m3_rf_fallback.joblib",
+  "metrics": {
+    "m1": {
+      "roc_auc": 0.6539293924087614,
+      "pr_auc": 0.8100381566505843
+    },
+    "m2": {
+      "roc_auc": 0.6600779574232535,
+      "pr_auc": 0.8171282107512879
+    },
+    "m3": {
+      "roc_auc": 0.6628514426736167,
+      "pr_auc": 0.823521636004445
+    },
+    "ensemble": {
+      "roc_auc": 0.6728459841163673,
+      "pr_auc": 0.8222146015060361
+    }
+  },
+  "meta_coefficients": {
+    "P_M1_behavioral": 2.1849398889191307,
+    "P_M2_psychometric": 1.7212784324672343,
+    "P_M3_liquidity": 1.964523056544001
+  }
+}
