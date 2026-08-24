@@ -20,6 +20,6 @@ import { AuditModule } from '../audit/audit.module';
   ],
   controllers: [LoanController],
   providers: [LoanService, LoanRepository],
-  exports: [LoanService],
+  exports: [LoanService, LoanRepository],
 })
 export class LoanModule {}

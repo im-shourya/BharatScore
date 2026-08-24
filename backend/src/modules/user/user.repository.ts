@@ -14,6 +14,10 @@ export class UserRepository {
     return this.repository.findOne({ where: { id } });
   }
 
+  async findByBankId(bankId: string): Promise<UserEntity | null> {
+    return this.repository.findOne({ where: { bank_id: bankId } });
+  }
+
   async updateById(id: string, updates: Partial<UserEntity>): Promise<UserEntity> {
     await this.repository.update(id, updates as any);
     return this.findById(id) as Promise<UserEntity>;

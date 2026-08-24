@@ -15,7 +15,7 @@ import { KycModule } from '../kyc/kyc.module';
   ],
   controllers: [UserController],
   providers: [UserService, UserRepository],
-  exports: [UserService],
+  exports: [UserService, UserRepository],
 })
 export class UserModule {}
 

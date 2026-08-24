@@ -5,6 +5,8 @@ import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { CurrentUser } from '../../decorators/current-user.decorator';
 import { JwtPayload } from '../../common/types/jwt-payload.type';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Public } from '../../decorators/public.decorator';
+import { Param } from '@nestjs/common';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -29,5 +31,12 @@ export class UserController {
   @ApiOperation({ summary: 'Request account deletion' })
   async requestDeletion(@CurrentUser() user: JwtPayload) {
     return this.userService.requestDeletion(user.sub);
+  }
+
+  @Public()
+  @Get('score/bank/:bankId')
+  @ApiOperation({ summary: 'Get user score by Bank ID (Used by Banks)' })
+  async getScoreByBankId(@Param('bankId') bankId: string) {
+    return this.userService.getScoreByBankId(bankId);
   }
 }

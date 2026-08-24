@@ -133,12 +133,14 @@ export class AuthService {
     const isNewUser = !user;
 
     if (!user) {
+      const bankId = crypto.randomBytes(5).toString('hex').toUpperCase();
       user = await this.authRepository.createUser({
         mobile_number: dto.mobile,
         status: UserStatus.ACTIVE,
         locale: lang || 'en',
+        bank_id: bankId,
       });
-      this.logger.log(`New user created: ${user.id}`);
+      this.logger.log(`New user created: ${user.id} with bank_id: ${bankId}`);
     }
 
     // Update FCM token if provided
@@ -287,6 +289,7 @@ export class AuthService {
       status: user.status,
       locale: user.locale,
       onboarding_step: user.onboarding_step,
+      bank_id: user.bank_id,
       created_at: user.created_at,
     };
   }

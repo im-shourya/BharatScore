@@ -24,11 +24,39 @@ export class UserService {
     return this.mapToResponse(user);
   }
 
+  async getScoreByBankId(bankId: string) {
+    const user = await this.userRepository.findByBankId(bankId);
+    if (!user) throw new NotFoundException({ code: 'INVALID_BANK_ID', message: 'No user found for this Bank ID' });
+    
+    // In a real app, this would query the ML Service or Scoring module.
+    // For now, we return a mocked structure linked to this user's data.
+    return {
+      bank_id: user.bank_id,
+      user_age: user.age,
+      score: 720,
+      change: 8,
+      factors: [
+        { name: 'Payment History', value: '98%', impact: 'High' },
+        { name: 'Credit Usage', value: '50%', impact: 'Medium' }
+      ]
+    };
+  }
+
   async updateProfile(userId: string, dto: UpdateProfileDto) {
     const updates: Partial<UserEntity> = {};
     if (dto.name) updates.full_name_encrypted = this.encryptionService.encrypt(dto.name);
     if (dto.email) updates.email_encrypted = this.encryptionService.encrypt(dto.email);
     if (dto.locale) updates.locale = dto.locale;
+    if (dto.dob) {
+      updates.dob = new Date(dto.dob);
+      const today = new Date();
+      let age = today.getFullYear() - updates.dob.getFullYear();
+      const m = today.getMonth() - updates.dob.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < updates.dob.getDate())) {
+        age--;
+      }
+      updates.age = age;
+    }
     
     const user = await this.userRepository.updateById(userId, updates);
     return this.mapToResponse(user);
@@ -70,6 +98,9 @@ export class UserService {
       kyc_verified_at: kyc.verified_at,
       kyc_fields_verified: kyc.fields_verified,
       onboarding_step: user.onboarding_step,
+      bank_id: user.bank_id,
+      dob: user.dob ? (typeof user.dob === 'string' ? user.dob : user.dob.toISOString().split('T')[0]) : null,
+      age: user.age,
       created_at: user.created_at,
     };
   }
